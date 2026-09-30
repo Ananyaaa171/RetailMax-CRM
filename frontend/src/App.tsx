@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import './App.css'
 
 type Customer = {
@@ -23,11 +23,61 @@ type Lead = {
 
 type Deal = {
   id: number
-  title: string
+  dealName: string
   customerId: number
   amount: number
   stage: string
-  probability: number
+  probability: string
+  expectedCloseDate?: string
+}
+
+type Task = {
+  id: number
+  title: string
+  description?: string
+  taskType: string
+  status: string
+  priority: string
+  dueDate?: string
+  customerId?: number
+  dealId?: number
+}
+
+type Campaign = {
+  id: number
+  campaignName: string
+  campaignType: string
+  status: string
+  targetAudience?: string
+  startDate?: string
+  endDate?: string
+  budget: number
+  targetLeads: number
+  generatedLeads: number
+  convertedLeads: number
+  revenueGenerated: number
+}
+
+type Notification = {
+  id: number
+  title: string
+  message: string
+  type: string
+  priority: string
+  isRead: boolean
+  customerId?: number
+  dealId?: number
+  taskId?: number
+  createdAt?: string
+}
+
+type UserAccount = {
+  id: number
+  username: string
+  email: string
+  fullName: string
+  role: string
+  status: string
 }
 
 const menuItems = [
@@ -259,824 +309,351 @@ function Dashboard() {
   )
 }
 
-function CustomersPage() {
 
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(20,20,30,.45)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
+      }}>
+        <div style={{
+          width: 'min(720px, 96vw)', maxHeight: '90vh', overflowY: 'auto',
+          background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,.2)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ margin: 0 }}>{title}</h2>
+            <button type="button" className="secondary-button" onClick={onClose}>✕</button>
+          </div>
+          {children}
+        </div>
+      </div>
+  )
+}
+
+function FormGrid({ children }: { children: React.ReactNode }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>{children}</div>
+}
+
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600 }}>
+        {label}
+        {children}
+      </label>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #d9dbe3',
+  borderRadius: 8, fontSize: 14, background: '#fff'
+}
+
+function ModalActions({ onClose, saving, label = 'Save Changes' }: { onClose: () => void; saving: boolean; label?: string }) {
+  return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+        <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
+        <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving...' : label}</button>
+      </div>
+  )
+}
+
+async function apiRequest(path: string, options: RequestInit = {}) {
+  const response = await fetch(`http://localhost:8081${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  })
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(body || `Request failed (${response.status})`)
+  }
+  if (response.status === 204) return null
+  return response.json()
+}
+
+function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [editing, setEditing] = useState<Customer | null>(null)
+  const [showForm, setShowForm] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    apiRequest('/api/customers').then(setCustomers).catch(() => setError('Could not load customers.')).finally(() => setLoading(false))
+  }
+  useEffect(load, [])
 
-    fetch('http://localhost:8081/api/customers')
-        .then((response) => {
+  const remove = async (id: number) => {
+    if (!window.confirm('Delete this customer?')) return
+    try { await apiRequest(`/api/customers/${id}`, { method: 'DELETE' }); load() }
+    catch { setError('Could not delete customer.') }
+  }
 
-          if (!response.ok) {
-            throw new Error('Failed to load customers')
-          }
+  const save = async (form: Omit<Customer, 'id'>) => {
+    try {
+      if (editing) await apiRequest(`/api/customers/${editing.id}`, { method: 'PUT', body: JSON.stringify(form) })
+      else await apiRequest('/api/customers', { method: 'POST', body: JSON.stringify(form) })
+      setShowForm(false); setEditing(null); load()
+    } catch { setError('Could not save customer.') }
+  }
 
-          return response.json()
-        })
-        .then((data) => {
-          setCustomers(data)
-          setLoading(false)
-        })
-        .catch(() => {
-          setError('Could not connect to the backend.')
-          setLoading(false)
-        })
-
-  }, [])
-
-  const filteredCustomers = customers.filter((customer) => {
-
-    const text = `
-      ${customer.firstName}
-      ${customer.lastName}
-      ${customer.email}
-      ${customer.phone}
-      ${customer.company}
-    `.toLowerCase()
-
-    return text.includes(search.toLowerCase())
-  })
+  const filtered = customers.filter(c => `${c.firstName} ${c.lastName} ${c.email} ${c.phone} ${c.company}`.toLowerCase().includes(search.toLowerCase()))
 
   return (
       <div className="module-page">
-
-        <div className="module-heading">
-          <div>
-            <h1>Customers</h1>
-            <p>View and manage your customer information.</p>
-          </div>
-
-          <button className="primary-button">
-            + Add Customer
-          </button>
-        </div>
-
+        <div className="module-heading"><div><h1>Customers</h1><p>View and manage your customer information.</p></div>
+          <button className="primary-button" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add Customer</button></div>
         <div className="customer-stats">
-
-          <div>
-            <span>Total Customers</span>
-            <strong>{customers.length}</strong>
-          </div>
-
-          <div>
-            <span>Companies</span>
-            <strong>
-              {new Set(
-                  customers
-                      .map((customer) => customer.company)
-                      .filter(Boolean)
-              ).size}
-            </strong>
-          </div>
-
-          <div>
-            <span>With Phone</span>
-            <strong>
-              {customers.filter((customer) => customer.phone).length}
-            </strong>
-          </div>
-
-          <div>
-            <span>With Email</span>
-            <strong>
-              {customers.filter((customer) => customer.email).length}
-            </strong>
-          </div>
-
+          <div><span>Total Customers</span><strong>{customers.length}</strong></div>
+          <div><span>Companies</span><strong>{new Set(customers.map(c => c.company).filter(Boolean)).size}</strong></div>
+          <div><span>With Phone</span><strong>{customers.filter(c => c.phone).length}</strong></div>
+          <div><span>With Email</span><strong>{customers.filter(c => c.email).length}</strong></div>
         </div>
-
         <div className="customer-table-card">
-
-          <div className="table-header">
-
-            <div>
-              <h2>Customer List</h2>
-              <p>Customers stored in RetailMax</p>
-            </div>
-
-            <input
-                className="table-search"
-                placeholder="Search customers..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-
-          </div>
-
-          {loading && (
-              <div className="table-message">
-                Loading customers...
-              </div>
-          )}
-
-          {error && (
-              <div className="table-error">
-                {error}
-              </div>
-          )}
-
-          {!loading && !error && (
-              <div className="table-wrapper">
-
-                <table>
-
-                  <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Customer</th>
-                    <th>Company</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                  </tr>
-                  </thead>
-
-                  <tbody>
-
-                  {filteredCustomers.map((customer) => (
-                      <tr key={customer.id}>
-
-                        <td>
-                      <span className="customer-id">
-                        #{customer.id}
-                      </span>
-                        </td>
-
-                        <td>
-
-                          <div className="customer-name">
-
-                            <div className="customer-avatar">
-                              {customer.firstName?.charAt(0)}
-                              {customer.lastName?.charAt(0)}
-                            </div>
-
-                            <div>
-                              <strong>
-                                {customer.firstName} {customer.lastName}
-                              </strong>
-
-                              <small>
-                                Customer
-                              </small>
-                            </div>
-
-                          </div>
-
-                        </td>
-
-                        <td>
-                          {customer.company || '—'}
-                        </td>
-
-                        <td>
-                          {customer.email || '—'}
-                        </td>
-
-                        <td>
-                          {customer.phone || '—'}
-                        </td>
-
-                      </tr>
-                  ))}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-          )}
-
+          <div className="table-header"><div><h2>Customer List</h2><p>Changes are saved directly to PostgreSQL.</p></div>
+            <input className="table-search" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          {loading && <div className="table-message">Loading customers...</div>}
+          {error && <div className="table-error">{error}</div>}
+          {!loading && <div className="table-wrapper"><table><thead><tr><th>ID</th><th>Customer</th><th>Company</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+            <tbody>{filtered.map(c => <tr key={c.id}>
+              <td>#{c.id}</td><td><div className="customer-name"><div className="customer-avatar">{c.firstName?.[0]}{c.lastName?.[0]}</div><div><strong>{c.firstName} {c.lastName}</strong><small>Customer</small></div></div></td>
+              <td>{c.company || '—'}</td><td>{c.email || '—'}</td><td>{c.phone || '—'}</td>
+              <td><div style={{display:'flex',gap:6}}><button className="secondary-button" onClick={() => { setEditing(c); setShowForm(true) }}>Edit</button><button className="secondary-button" onClick={() => remove(c.id)}>Delete</button></div></td>
+            </tr>)}</tbody></table></div>}
         </div>
-
+        {showForm && <CustomerForm initial={editing} onClose={() => {setShowForm(false);setEditing(null)}} onSave={save} />}
       </div>
   )
+}
+
+function CustomerForm({ initial, onClose, onSave }: { initial: Customer | null; onClose: () => void; onSave: (data: Omit<Customer,'id'>) => Promise<void> }) {
+  const [form, setForm] = useState<Omit<Customer,'id'>>({
+    firstName: initial?.firstName || '', lastName: initial?.lastName || '', email: initial?.email || '',
+    phone: initial?.phone || '', company: initial?.company || ''
+  })
+  const [saving, setSaving] = useState(false)
+  const submit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); try { await onSave(form) } finally { setSaving(false) } }
+  const set = (key: keyof typeof form, value: string) => setForm({...form, [key]: value})
+  return <Modal title={initial ? 'Edit Customer' : 'Add Customer'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="First Name"><input required style={inputStyle} value={form.firstName} onChange={e=>set('firstName',e.target.value)} /></FormField>
+    <FormField label="Last Name"><input required style={inputStyle} value={form.lastName} onChange={e=>set('lastName',e.target.value)} /></FormField>
+    <FormField label="Email"><input type="email" style={inputStyle} value={form.email} onChange={e=>set('email',e.target.value)} /></FormField>
+    <FormField label="Phone"><input style={inputStyle} value={form.phone} onChange={e=>set('phone',e.target.value)} /></FormField>
+    <FormField label="Company"><input style={inputStyle} value={form.company} onChange={e=>set('company',e.target.value)} /></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update Customer':'Create Customer'} /></form></Modal>
 }
 
 function LeadsPage() {
-
   const [leads, setLeads] = useState<Lead[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [search, setSearch] = useState('')
+  const [editing, setEditing] = useState<Lead|null>(null); const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/leads').then(setLeads).catch(()=>setError('Could not load leads.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:Omit<Lead,'id'>)=>{try{if(editing)await apiRequest(`/api/leads/${editing.id}`,{method:'PUT',body:JSON.stringify(data)});else await apiRequest('/api/leads',{method:'POST',body:JSON.stringify(data)});setShowForm(false);setEditing(null);load()}catch{setError('Could not save lead.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this lead?'))return;try{await apiRequest(`/api/leads/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete lead.')}}
+  const calculate=async(id:number)=>{try{await apiRequest(`/api/leads/${id}/calculate-score`,{method:'POST'});load()}catch{setError('Could not calculate lead score.')}}
+  const convert=async(id:number)=>{if(!confirm('Convert this lead into a customer?'))return;try{await apiRequest(`/api/leads/${id}/convert`,{method:'POST'});load()}catch{setError('Could not convert lead.')}}
+  const filtered=leads.filter(l=>`${l.firstName} ${l.lastName} ${l.email} ${l.phone} ${l.source} ${l.status}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="module-page">
+    <div className="module-heading"><div><h1>Leads</h1><p>Track and manage potential customers.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Lead</button></div>
+    <div className="customer-stats"><div><span>Total Leads</span><strong>{leads.length}</strong></div><div><span>Very Hot</span><strong>{leads.filter(l=>l.status==='VERY_HOT').length}</strong></div><div><span>Hot</span><strong>{leads.filter(l=>l.status==='HOT').length}</strong></div><div><span>Qualified</span><strong>{leads.filter(l=>l.status==='QUALIFIED').length}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Lead List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search leads..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading leads...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Lead</th><th>Email</th><th>Source</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(l=><tr key={l.id}><td>#{l.id}</td><td><div className="customer-name"><div className="customer-avatar">{l.firstName?.[0]}{l.lastName?.[0]}</div><div><strong>{l.firstName} {l.lastName}</strong><small>{l.phone}</small></div></div></td><td>{l.email||'—'}</td><td>{l.source||'—'}</td><td>{l.score}</td><td>{l.status?.replace(/_/g,' ')}</td>
+        <td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(l);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>calculate(l.id)}>Score</button><button className="secondary-button" onClick={()=>convert(l.id)}>Convert</button><button className="secondary-button" onClick={()=>remove(l.id)}>Delete</button></div></td>
+      </tr>)}</tbody></table></div>}
+    </div>
+    {showForm&&<LeadForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}
+  </div>
+}
 
-  useEffect(() => {
-
-    fetch('http://localhost:8081/api/leads')
-        .then((response) => {
-
-          if (!response.ok) {
-            throw new Error('Failed to load leads')
-          }
-
-          return response.json()
-        })
-        .then((data) => {
-          setLeads(data)
-          setLoading(false)
-        })
-        .catch(() => {
-          setError('Could not connect to the backend.')
-          setLoading(false)
-        })
-
-  }, [])
-
-  const filteredLeads = leads.filter((lead) => {
-
-    const text = `
-      ${lead.firstName}
-      ${lead.lastName}
-      ${lead.email}
-      ${lead.phone}
-      ${lead.source}
-      ${lead.status}
-    `.toLowerCase()
-
-    return text.includes(search.toLowerCase())
-  })
-
-  const getStatusStyle = (status: string) => {
-
-    if (status === 'VERY_HOT') {
-      return {
-        background: '#fbecef',
-        color: '#c34e6c',
-      }
-    }
-
-    if (status === 'HOT') {
-      return {
-        background: '#fff4df',
-        color: '#c78316',
-      }
-    }
-
-    if (status === 'QUALIFIED') {
-      return {
-        background: '#e5f7f8',
-        color: '#15939d',
-      }
-    }
-
-    if (status === 'CONVERTED') {
-      return {
-        background: '#e7f7ef',
-        color: '#239d78',
-      }
-    }
-
-    return {
-      background: '#f0f1f4',
-      color: '#707586',
-    }
-  }
-
-  return (
-      <div className="module-page">
-
-        <div className="module-heading">
-
-          <div>
-            <h1>Leads</h1>
-            <p>Track and manage potential customers.</p>
-          </div>
-
-          <button className="primary-button">
-            + Add Lead
-          </button>
-
-        </div>
-
-        <div className="customer-stats">
-
-          <div>
-            <span>Total Leads</span>
-            <strong>{leads.length}</strong>
-          </div>
-
-          <div>
-            <span>Very Hot</span>
-            <strong>
-              {leads.filter(
-                  (lead) => lead.status === 'VERY_HOT'
-              ).length}
-            </strong>
-          </div>
-
-          <div>
-            <span>Hot</span>
-            <strong>
-              {leads.filter(
-                  (lead) => lead.status === 'HOT'
-              ).length}
-            </strong>
-          </div>
-
-          <div>
-            <span>Qualified</span>
-            <strong>
-              {leads.filter(
-                  (lead) => lead.status === 'QUALIFIED'
-              ).length}
-            </strong>
-          </div>
-
-        </div>
-
-        <div className="customer-table-card">
-
-          <div className="table-header">
-
-            <div>
-              <h2>Lead List</h2>
-              <p>Leads stored in RetailMax</p>
-            </div>
-
-            <input
-                className="table-search"
-                placeholder="Search leads..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-
-          </div>
-
-          {loading && (
-              <div className="table-message">
-                Loading leads...
-              </div>
-          )}
-
-          {error && (
-              <div className="table-error">
-                {error}
-              </div>
-          )}
-
-          {!loading && !error && (
-              <div className="table-wrapper">
-
-                <table>
-
-                  <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Lead</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Source</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                  </tr>
-                  </thead>
-
-                  <tbody>
-
-                  {filteredLeads.map((lead) => (
-                      <tr key={lead.id}>
-
-                        <td>
-                      <span className="customer-id">
-                        #{lead.id}
-                      </span>
-                        </td>
-
-                        <td>
-
-                          <div className="customer-name">
-
-                            <div className="customer-avatar">
-                              {lead.firstName?.charAt(0)}
-                              {lead.lastName?.charAt(0)}
-                            </div>
-
-                            <div>
-                              <strong>
-                                {lead.firstName} {lead.lastName}
-                              </strong>
-
-                              <small>
-                                Lead
-                              </small>
-                            </div>
-
-                          </div>
-
-                        </td>
-
-                        <td>
-                          {lead.email || '—'}
-                        </td>
-
-                        <td>
-                          {lead.phone || '—'}
-                        </td>
-
-                        <td>
-                          {lead.source || '—'}
-                        </td>
-
-                        <td>
-                          <strong>
-                            {lead.score}
-                          </strong>
-                        </td>
-
-                        <td>
-
-                      <span
-                          style={{
-                            ...getStatusStyle(lead.status),
-                            display: 'inline-block',
-                            padding: '5px 8px',
-                            borderRadius: '12px',
-                            fontSize: '8px',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                          }}
-                      >
-                        {lead.status?.replace('_', ' ')}
-                      </span>
-
-                        </td>
-
-                      </tr>
-                  ))}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-          )}
-
-        </div>
-
-      </div>
-  )
+function LeadForm({initial,onClose,onSave}:{initial:Lead|null;onClose:()=>void;onSave:(data:Omit<Lead,'id'>)=>Promise<void>}) {
+  const [form,setForm]=useState<Omit<Lead,'id'>>({firstName:initial?.firstName||'',lastName:initial?.lastName||'',email:initial?.email||'',phone:initial?.phone||'',source:initial?.source||'Website',status:initial?.status||'NEW',score:initial?.score??0})
+  const [saving,setSaving]=useState(false); const set=(k:keyof typeof form,v:string|number)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title={initial?'Edit Lead':'Add Lead'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="First Name"><input required style={inputStyle} value={form.firstName} onChange={e=>set('firstName',e.target.value)}/></FormField>
+    <FormField label="Last Name"><input required style={inputStyle} value={form.lastName} onChange={e=>set('lastName',e.target.value)}/></FormField>
+    <FormField label="Email"><input type="email" style={inputStyle} value={form.email} onChange={e=>set('email',e.target.value)}/></FormField>
+    <FormField label="Phone"><input style={inputStyle} value={form.phone} onChange={e=>set('phone',e.target.value)}/></FormField>
+    <FormField label="Source"><select style={inputStyle} value={form.source} onChange={e=>set('source',e.target.value)}><option>Website</option><option>LinkedIn</option><option>Referral</option><option>Social Media</option><option>Other</option></select></FormField>
+    <FormField label="Status"><select style={inputStyle} value={form.status} onChange={e=>set('status',e.target.value)}><option>NEW</option><option>QUALIFIED</option><option>HOT</option><option>VERY_HOT</option><option>CONVERTED</option></select></FormField>
+    <FormField label="Score"><input type="number" min="0" max="100" style={inputStyle} value={form.score} onChange={e=>set('score',Number(e.target.value))}/></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update Lead':'Create Lead'}/></form></Modal>
 }
 
 function DealsPage() {
-
-  const [deals, setDeals] = useState<Deal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
-
-  useEffect(() => {
-
-    fetch('http://localhost:8081/api/deals')
-        .then((response) => {
-
-          if (!response.ok) {
-            throw new Error('Failed to load deals')
-          }
-
-          return response.json()
-        })
-        .then((data) => {
-          setDeals(data)
-          setLoading(false)
-        })
-        .catch(() => {
-          setError('Could not connect to the backend.')
-          setLoading(false)
-        })
-
-  }, [])
-
-  const filteredDeals = deals.filter((deal) => {
-
-    const text = `
-      ${deal.title}
-      ${deal.stage}
-      ${deal.customerId}
-      ${deal.amount}
-    `.toLowerCase()
-
-    return text.includes(search.toLowerCase())
-  })
-
-  const totalValue = deals.reduce(
-      (total, deal) => total + Number(deal.amount || 0),
-      0
-  )
-
-  const wonDeals = deals.filter(
-      (deal) => deal.stage === 'WON'
-  )
-
-  const negotiationDeals = deals.filter(
-      (deal) => deal.stage === 'NEGOTIATION'
-  )
-
-  const getStageStyle = (stage: string) => {
-
-    if (stage === 'WON') {
-      return {
-        background: '#e7f7ef',
-        color: '#239d78',
-      }
-    }
-
-    if (stage === 'LOST') {
-      return {
-        background: '#fbecef',
-        color: '#c34e6c',
-      }
-    }
-
-    if (stage === 'NEGOTIATION') {
-      return {
-        background: '#fff4df',
-        color: '#c78316',
-      }
-    }
-
-    if (stage === 'PROPOSAL') {
-      return {
-        background: '#f0edff',
-        color: '#6655bd',
-      }
-    }
-
-    if (stage === 'QUALIFIED') {
-      return {
-        background: '#e5f7f8',
-        color: '#15939d',
-      }
-    }
-
-    return {
-      background: '#f0f1f4',
-      color: '#707586',
-    }
-  }
-
-  const formatAmount = (amount: number) => {
-    return `₹${Number(amount).toLocaleString('en-IN')}`
-  }
-
-  return (
-      <div className="module-page">
-
-        <div className="module-heading">
-
-          <div>
-            <h1>Deals</h1>
-            <p>Manage sales opportunities and deal stages.</p>
-          </div>
-
-          <button className="primary-button">
-            + Add Deal
-          </button>
-
-        </div>
-
-        <div className="customer-stats">
-
-          <div>
-            <span>Total Deals</span>
-            <strong>{deals.length}</strong>
-          </div>
-
-          <div>
-            <span>Pipeline Value</span>
-            <strong>
-              ₹{totalValue.toLocaleString('en-IN')}
-            </strong>
-          </div>
-
-          <div>
-            <span>Won Deals</span>
-            <strong>{wonDeals.length}</strong>
-          </div>
-
-          <div>
-            <span>Negotiations</span>
-            <strong>{negotiationDeals.length}</strong>
-          </div>
-
-        </div>
-
-        <div className="customer-table-card">
-
-          <div className="table-header">
-
-            <div>
-              <h2>Deal List</h2>
-              <p>Sales opportunities stored in RetailMax</p>
-            </div>
-
-            <input
-                className="table-search"
-                placeholder="Search deals..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-
-          </div>
-
-          {loading && (
-              <div className="table-message">
-                Loading deals...
-              </div>
-          )}
-
-          {error && (
-              <div className="table-error">
-                {error}
-              </div>
-          )}
-
-          {!loading && !error && (
-              <div className="table-wrapper">
-
-                <table>
-
-                  <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Deal</th>
-                    <th>Customer ID</th>
-                    <th>Amount</th>
-                    <th>Stage</th>
-                    <th>Probability</th>
-                  </tr>
-                  </thead>
-
-                  <tbody>
-
-                  {filteredDeals.map((deal) => (
-                      <tr key={deal.id}>
-
-                        <td>
-                      <span className="customer-id">
-                        #{deal.id}
-                      </span>
-                        </td>
-
-                        <td>
-
-                          <div className="customer-name">
-
-                            <div className="customer-avatar">
-                              ◆
-                            </div>
-
-                            <div>
-                              <strong>
-                                {deal.title}
-                              </strong>
-
-                              <small>
-                                Sales Opportunity
-                              </small>
-                            </div>
-
-                          </div>
-
-                        </td>
-
-                        <td>
-                          Customer #{deal.customerId}
-                        </td>
-
-                        <td>
-                          <strong>
-                            {formatAmount(deal.amount)}
-                          </strong>
-                        </td>
-
-                        <td>
-
-                      <span
-                          style={{
-                            ...getStageStyle(deal.stage),
-                            display: 'inline-block',
-                            padding: '5px 8px',
-                            borderRadius: '12px',
-                            fontSize: '8px',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                          }}
-                      >
-                        {deal.stage}
-                      </span>
-
-                        </td>
-
-                        <td>
-
-                          <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '7px',
-                              }}
-                          >
-
-                            <div
-                                style={{
-                                  width: '65px',
-                                  height: '5px',
-                                  background: '#eceef2',
-                                  borderRadius: '5px',
-                                  overflow: 'hidden',
-                                }}
-                            >
-
-                              <div
-                                  style={{
-                                    width: `${deal.probability}%`,
-                                    height: '100%',
-                                    background: '#5144ae',
-                                    borderRadius: '5px',
-                                  }}
-                              />
-
-                            </div>
-
-                            <span>
-                          {deal.probability}%
-                        </span>
-
-                          </div>
-
-                        </td>
-
-                      </tr>
-                  ))}
-
-                  </tbody>
-
-                </table>
-
-              </div>
-          )}
-
-        </div>
-
-      </div>
-  )
+  const [deals,setDeals]=useState<Deal[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [search,setSearch]=useState('')
+  const [editing,setEditing]=useState<Deal|null>(null); const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/deals').then(setDeals).catch(()=>setError('Could not load deals.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:Omit<Deal,'id'>)=>{try{if(editing)await apiRequest(`/api/deals/${editing.id}`,{method:'PUT',body:JSON.stringify(data)});else await apiRequest('/api/deals',{method:'POST',body:JSON.stringify(data)});setShowForm(false);setEditing(null);load()}catch{setError('Could not save deal.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this deal?'))return;try{await apiRequest(`/api/deals/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete deal.')}}
+  const filtered=deals.filter(d=>`${d.dealName} ${d.stage} ${d.customerId} ${d.amount}`.toLowerCase().includes(search.toLowerCase()))
+  const total=deals.reduce((s,d)=>s+Number(d.amount||0),0)
+  return <div className="module-page">
+    <div className="module-heading"><div><h1>Deals</h1><p>Manage sales opportunities and deal stages.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Deal</button></div>
+    <div className="customer-stats"><div><span>Total Deals</span><strong>{deals.length}</strong></div><div><span>Pipeline Value</span><strong>₹{total.toLocaleString('en-IN')}</strong></div><div><span>Won Deals</span><strong>{deals.filter(d=>d.stage==='WON').length}</strong></div><div><span>Negotiations</span><strong>{deals.filter(d=>d.stage==='NEGOTIATION').length}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Deal List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search deals..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading deals...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Deal</th><th>Customer</th><th>Amount</th><th>Stage</th><th>Probability</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(d=><tr key={d.id}><td>#{d.id}</td><td><strong>{d.dealName}</strong></td><td>#{d.customerId}</td><td>₹{Number(d.amount||0).toLocaleString('en-IN')}</td><td>{d.stage}</td><td>{d.probability}</td><td><div style={{display:'flex',gap:5}}><button className="secondary-button" onClick={()=>{setEditing(d);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>remove(d.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
+    </div>
+    {showForm&&<DealForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}
+  </div>
 }
 
-function ModulePage({ page }: { page: string }) {
+function DealForm({initial,onClose,onSave}:{initial:Deal|null;onClose:()=>void;onSave:(data:Omit<Deal,'id'>)=>Promise<void>}) {
+  const [form,setForm]=useState<Omit<Deal,'id'>>({dealName:initial?.dealName||'',customerId:initial?.customerId||0,amount:initial?.amount||0,stage:initial?.stage||'PROSPECTING',probability:initial?.probability||'10%',expectedCloseDate:initial?.expectedCloseDate||''})
+  const [saving,setSaving]=useState(false); const set=(k:keyof typeof form,v:string|number)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title={initial?'Edit Deal':'Add Deal'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="Deal Name"><input required style={inputStyle} value={form.dealName} onChange={e=>set('dealName',e.target.value)}/></FormField>
+    <FormField label="Customer ID"><input type="number" min="1" required style={inputStyle} value={form.customerId||''} onChange={e=>set('customerId',Number(e.target.value))}/></FormField>
+    <FormField label="Amount"><input type="number" min="0" required style={inputStyle} value={form.amount} onChange={e=>set('amount',Number(e.target.value))}/></FormField>
+    <FormField label="Stage"><select style={inputStyle} value={form.stage} onChange={e=>set('stage',e.target.value)}><option>PROSPECTING</option><option>QUALIFIED</option><option>PROPOSAL</option><option>NEGOTIATION</option><option>WON</option><option>LOST</option></select></FormField>
+    <FormField label="Probability"><input style={inputStyle} value={form.probability} onChange={e=>set('probability',e.target.value)}/></FormField>
+    <FormField label="Expected Close Date"><input type="date" style={inputStyle} value={form.expectedCloseDate||''} onChange={e=>set('expectedCloseDate',e.target.value)}/></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update Deal':'Create Deal'}/></form></Modal>
+}
 
-  const descriptions: Record<string, string> = {
-    Tasks: 'Manage follow-ups and scheduled activities.',
-    Campaigns: 'Manage marketing campaigns and results.',
-    Notifications: 'View important CRM notifications.',
-    'Users & Settings': 'Manage system users and settings.',
-  }
+function TasksPage() {
+  const [tasks,setTasks]=useState<Task[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [search,setSearch]=useState('')
+  const [editing,setEditing]=useState<Task|null>(null); const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/tasks').then(setTasks).catch(()=>setError('Could not load tasks.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:Omit<Task,'id'>)=>{try{if(editing)await apiRequest(`/api/tasks/${editing.id}`,{method:'PUT',body:JSON.stringify(data)});else await apiRequest('/api/tasks',{method:'POST',body:JSON.stringify(data)});setShowForm(false);setEditing(null);load()}catch{setError('Could not save task.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this task?'))return;try{await apiRequest(`/api/tasks/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete task.')}}
+  const complete=async(id:number)=>{try{await apiRequest(`/api/tasks/${id}/complete`,{method:'PUT'});load()}catch{setError('Could not complete task.')}}
+  const filtered=tasks.filter(t=>`${t.title} ${t.description||''} ${t.taskType} ${t.status} ${t.priority}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="module-page"><div className="module-heading"><div><h1>Tasks</h1><p>Manage follow-ups and scheduled activities.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Task</button></div>
+    <div className="customer-stats"><div><span>Total Tasks</span><strong>{tasks.length}</strong></div><div><span>Pending</span><strong>{tasks.filter(t=>t.status!=='COMPLETED').length}</strong></div><div><span>Completed</span><strong>{tasks.filter(t=>t.status==='COMPLETED').length}</strong></div><div><span>High Priority</span><strong>{tasks.filter(t=>t.priority==='HIGH').length}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Task List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading tasks...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Task</th><th>Type</th><th>Due</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(t=><tr key={t.id}><td>#{t.id}</td><td><strong>{t.title}</strong><small>{t.description}</small></td><td>{t.taskType}</td><td>{t.dueDate||'—'}</td><td>{t.priority}</td><td>{t.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(t);setShowForm(true)}}>Edit</button>{t.status!=='COMPLETED'&&<button className="secondary-button" onClick={()=>complete(t.id)}>Complete</button>}<button className="secondary-button" onClick={()=>remove(t.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
+    </div>{showForm&&<TaskForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}</div>
+}
 
-  const icons: Record<string, string> = {
-    Tasks: '✓',
-    Campaigns: '✦',
-    Notifications: '♧',
-    'Users & Settings': '⚙',
-  }
+function TaskForm({initial,onClose,onSave}:{initial:Task|null;onClose:()=>void;onSave:(data:Omit<Task,'id'>)=>Promise<void>}) {
+  const [form,setForm]=useState<Omit<Task,'id'>>({title:initial?.title||'',description:initial?.description||'',taskType:initial?.taskType||'FOLLOW_UP',status:initial?.status||'PENDING',priority:initial?.priority||'MEDIUM',dueDate:initial?.dueDate||'',customerId:initial?.customerId||undefined,dealId:initial?.dealId||undefined})
+  const [saving,setSaving]=useState(false); const set=(k:keyof typeof form,v:any)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title={initial?'Edit Task':'Add Task'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="Title"><input required style={inputStyle} value={form.title} onChange={e=>set('title',e.target.value)}/></FormField>
+    <FormField label="Type"><select style={inputStyle} value={form.taskType} onChange={e=>set('taskType',e.target.value)}><option>FOLLOW_UP</option><option>CALL</option><option>MEETING</option><option>EMAIL</option><option>OTHER</option></select></FormField>
+    <FormField label="Description"><textarea style={{...inputStyle,minHeight:80}} value={form.description||''} onChange={e=>set('description',e.target.value)}/></FormField>
+    <FormField label="Due Date"><input type="date" style={inputStyle} value={form.dueDate||''} onChange={e=>set('dueDate',e.target.value)}/></FormField>
+    <FormField label="Priority"><select style={inputStyle} value={form.priority} onChange={e=>set('priority',e.target.value)}><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></FormField>
+    <FormField label="Status"><select style={inputStyle} value={form.status} onChange={e=>set('status',e.target.value)}><option>PENDING</option><option>IN_PROGRESS</option><option>COMPLETED</option><option>CANCELLED</option></select></FormField>
+    <FormField label="Customer ID"><input type="number" style={inputStyle} value={form.customerId||''} onChange={e=>set('customerId',e.target.value?Number(e.target.value):undefined)}/></FormField>
+    <FormField label="Deal ID"><input type="number" style={inputStyle} value={form.dealId||''} onChange={e=>set('dealId',e.target.value?Number(e.target.value):undefined)}/></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update Task':'Create Task'}/></form></Modal>
+}
 
-  return (
-      <div className="module-page">
+function CampaignsPage() {
+  const [items,setItems]=useState<Campaign[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [search,setSearch]=useState('')
+  const [editing,setEditing]=useState<Campaign|null>(null); const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/campaigns').then(setItems).catch(()=>setError('Could not load campaigns.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:Omit<Campaign,'id'>)=>{try{if(editing)await apiRequest(`/api/campaigns/${editing.id}`,{method:'PUT',body:JSON.stringify(data)});else await apiRequest('/api/campaigns',{method:'POST',body:JSON.stringify(data)});setShowForm(false);setEditing(null);load()}catch{setError('Could not save campaign.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this campaign?'))return;try{await apiRequest(`/api/campaigns/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete campaign.')}}
+  const status=async(id:number,s:string)=>{try{await apiRequest(`/api/campaigns/${id}/status?status=${encodeURIComponent(s)}`,{method:'PUT'});load()}catch{setError('Could not update campaign status.')}}
+  const filtered=items.filter(c=>`${c.campaignName} ${c.campaignType} ${c.status} ${c.targetAudience||''}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="module-page"><div className="module-heading"><div><h1>Campaigns</h1><p>Manage marketing campaigns and results.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Campaign</button></div>
+    <div className="customer-stats"><div><span>Total Campaigns</span><strong>{items.length}</strong></div><div><span>Active</span><strong>{items.filter(c=>c.status==='ACTIVE').length}</strong></div><div><span>Budget</span><strong>₹{items.reduce((s,c)=>s+Number(c.budget||0),0).toLocaleString('en-IN')}</strong></div><div><span>Revenue</span><strong>₹{items.reduce((s,c)=>s+Number(c.revenueGenerated||0),0).toLocaleString('en-IN')}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Campaign List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search campaigns..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading campaigns...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Campaign</th><th>Type</th><th>Budget</th><th>Leads</th><th>Revenue</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(c=><tr key={c.id}><td>#{c.id}</td><td><strong>{c.campaignName}</strong><small>{c.targetAudience||'—'}</small></td><td>{c.campaignType}</td><td>₹{Number(c.budget||0).toLocaleString('en-IN')}</td><td>{c.generatedLeads}/{c.targetLeads}</td><td>₹{Number(c.revenueGenerated||0).toLocaleString('en-IN')}</td><td>{c.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(c);setShowForm(true)}}>Edit</button>{c.status!=='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'ACTIVE')}>Activate</button>}{c.status==='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'PAUSED')}>Pause</button>}<button className="secondary-button" onClick={()=>remove(c.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
+    </div>{showForm&&<CampaignForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}</div>
+}
 
-        <div className="module-heading">
+function CampaignForm({initial,onClose,onSave}:{initial:Campaign|null;onClose:()=>void;onSave:(data:Omit<Campaign,'id'>)=>Promise<void>}) {
+  const [form,setForm]=useState<Omit<Campaign,'id'>>({campaignName:initial?.campaignName||'',campaignType:initial?.campaignType||'EMAIL',status:initial?.status||'DRAFT',targetAudience:initial?.targetAudience||'',startDate:initial?.startDate||'',endDate:initial?.endDate||'',budget:initial?.budget||0,targetLeads:initial?.targetLeads||0,generatedLeads:initial?.generatedLeads||0,convertedLeads:initial?.convertedLeads||0,revenueGenerated:initial?.revenueGenerated||0})
+  const [saving,setSaving]=useState(false); const set=(k:keyof typeof form,v:any)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title={initial?'Edit Campaign':'Add Campaign'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="Campaign Name"><input required style={inputStyle} value={form.campaignName} onChange={e=>set('campaignName',e.target.value)}/></FormField>
+    <FormField label="Type"><select style={inputStyle} value={form.campaignType} onChange={e=>set('campaignType',e.target.value)}><option>EMAIL</option><option>SOCIAL_MEDIA</option><option>SMS</option><option>WEB</option><option>OTHER</option></select></FormField>
+    <FormField label="Status"><select style={inputStyle} value={form.status} onChange={e=>set('status',e.target.value)}><option>DRAFT</option><option>ACTIVE</option><option>PAUSED</option><option>COMPLETED</option></select></FormField>
+    <FormField label="Target Audience"><input style={inputStyle} value={form.targetAudience||''} onChange={e=>set('targetAudience',e.target.value)}/></FormField>
+    <FormField label="Start Date"><input style={inputStyle} value={form.startDate||''} onChange={e=>set('startDate',e.target.value)}/></FormField>
+    <FormField label="End Date"><input style={inputStyle} value={form.endDate||''} onChange={e=>set('endDate',e.target.value)}/></FormField>
+    <FormField label="Budget"><input type="number" min="0" style={inputStyle} value={form.budget} onChange={e=>set('budget',Number(e.target.value))}/></FormField>
+    <FormField label="Target Leads"><input type="number" min="0" style={inputStyle} value={form.targetLeads} onChange={e=>set('targetLeads',Number(e.target.value))}/></FormField>
+    <FormField label="Generated Leads"><input type="number" min="0" style={inputStyle} value={form.generatedLeads} onChange={e=>set('generatedLeads',Number(e.target.value))}/></FormField>
+    <FormField label="Converted Leads"><input type="number" min="0" style={inputStyle} value={form.convertedLeads} onChange={e=>set('convertedLeads',Number(e.target.value))}/></FormField>
+    <FormField label="Revenue Generated"><input type="number" min="0" style={inputStyle} value={form.revenueGenerated} onChange={e=>set('revenueGenerated',Number(e.target.value))}/></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update Campaign':'Create Campaign'}/></form></Modal>
+}
 
-          <div>
-            <h1>{page}</h1>
-            <p>{descriptions[page]}</p>
-          </div>
+function NotificationsPage() {
+  const [items,setItems]=useState<Notification[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [search,setSearch]=useState('')
+  const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/notifications').then(setItems).catch(()=>setError('Could not load notifications.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:Omit<Notification,'id'|'createdAt'>)=>{try{await apiRequest('/api/notifications',{method:'POST',body:JSON.stringify(data)});setShowForm(false);load()}catch{setError('Could not create notification.')}}
+  const read=async(id:number)=>{try{await apiRequest(`/api/notifications/${id}/read`,{method:'PUT'});load()}catch{setError('Could not update notification.')}}
+  const unread=async(id:number)=>{try{await apiRequest(`/api/notifications/${id}/unread`,{method:'PUT'});load()}catch{setError('Could not update notification.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this notification?'))return;try{await apiRequest(`/api/notifications/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete notification.')}}
+  const filtered=items.filter(n=>`${n.title} ${n.message} ${n.type} ${n.priority}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="module-page"><div className="module-heading"><div><h1>Notifications</h1><p>View important CRM notifications.</p></div><button className="primary-button" onClick={()=>setShowForm(true)}>+ Add Notification</button></div>
+    <div className="customer-stats"><div><span>Total</span><strong>{items.length}</strong></div><div><span>Unread</span><strong>{items.filter(n=>!n.isRead).length}</strong></div><div><span>High Priority</span><strong>{items.filter(n=>n.priority==='HIGH').length}</strong></div><div><span>Read</span><strong>{items.filter(n=>n.isRead).length}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Notification List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search notifications..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading notifications...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Notification</th><th>Type</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(n=><tr key={n.id}><td>#{n.id}</td><td><strong>{n.title}</strong><small>{n.message}</small></td><td>{n.type}</td><td>{n.priority}</td><td>{n.isRead?'READ':'UNREAD'}</td><td><div style={{display:'flex',gap:5}}>{n.isRead?<button className="secondary-button" onClick={()=>unread(n.id)}>Mark Unread</button>:<button className="secondary-button" onClick={()=>read(n.id)}>Mark Read</button>}<button className="secondary-button" onClick={()=>remove(n.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
+    </div>{showForm&&<NotificationForm onClose={()=>setShowForm(false)} onSave={save}/>}</div>
+}
 
-          <button className="primary-button">
-            + Add New
-          </button>
+function NotificationForm({onClose,onSave}:{onClose:()=>void;onSave:(data:Omit<Notification,'id'|'createdAt'>)=>Promise<void>}) {
+  const [form,setForm]=useState<Omit<Notification,'id'|'createdAt'>>({title:'',message:'',type:'GENERAL',priority:'MEDIUM',isRead:false,customerId:undefined,dealId:undefined,taskId:undefined})
+  const [saving,setSaving]=useState(false); const set=(k:keyof typeof form,v:any)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title="Add Notification" onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="Title"><input required style={inputStyle} value={form.title} onChange={e=>set('title',e.target.value)}/></FormField>
+    <FormField label="Type"><input style={inputStyle} value={form.type} onChange={e=>set('type',e.target.value)}/></FormField>
+    <FormField label="Message"><textarea required style={{...inputStyle,minHeight:90}} value={form.message} onChange={e=>set('message',e.target.value)}/></FormField>
+    <FormField label="Priority"><select style={inputStyle} value={form.priority} onChange={e=>set('priority',e.target.value)}><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></FormField>
+    <FormField label="Customer ID"><input type="number" style={inputStyle} value={form.customerId||''} onChange={e=>set('customerId',e.target.value?Number(e.target.value):undefined)}/></FormField>
+    <FormField label="Deal ID"><input type="number" style={inputStyle} value={form.dealId||''} onChange={e=>set('dealId',e.target.value?Number(e.target.value):undefined)}/></FormField>
+    <FormField label="Task ID"><input type="number" style={inputStyle} value={form.taskId||''} onChange={e=>set('taskId',e.target.value?Number(e.target.value):undefined)}/></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label="Create Notification"/></form></Modal>
+}
 
-        </div>
+function UsersSettingsPage() {
+  const [users,setUsers]=useState<UserAccount[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState(''); const [search,setSearch]=useState('')
+  const [editing,setEditing]=useState<UserAccount|null>(null); const [showForm,setShowForm]=useState(false)
+  const load=()=>{setLoading(true);apiRequest('/api/users').then(setUsers).catch(()=>setError('Could not load users.')).finally(()=>setLoading(false))}
+  useEffect(load,[])
+  const save=async(data:UserAccount & {password?:string})=>{try{const payload={...data};delete (payload as any).id;if(editing)await apiRequest(`/api/users/${editing.id}`,{method:'PUT',body:JSON.stringify(payload)});else await apiRequest('/api/users',{method:'POST',body:JSON.stringify(payload)});setShowForm(false);setEditing(null);load()}catch{setError('Could not save user.')}}
+  const status=async(id:number,s:string)=>{try{await apiRequest(`/api/users/${id}/status?status=${encodeURIComponent(s)}`,{method:'PUT'});load()}catch{setError('Could not update user status.')}}
+  const remove=async(id:number)=>{if(!confirm('Delete this user?'))return;try{await apiRequest(`/api/users/${id}`,{method:'DELETE'});load()}catch{setError('Could not delete user.')}}
+  const filtered=users.filter(u=>`${u.username} ${u.email} ${u.fullName} ${u.role} ${u.status}`.toLowerCase().includes(search.toLowerCase()))
+  return <div className="module-page"><div className="module-heading"><div><h1>Users & Settings</h1><p>Manage system users and settings.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add User</button></div>
+    <div className="customer-stats"><div><span>Total Users</span><strong>{users.length}</strong></div><div><span>Active</span><strong>{users.filter(u=>u.status==='ACTIVE').length}</strong></div><div><span>Administrators</span><strong>{users.filter(u=>u.role==='ADMIN').length}</strong></div><div><span>Inactive</span><strong>{users.filter(u=>u.status!=='ACTIVE').length}</strong></div></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>User List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search users..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {loading&&<div className="table-message">Loading users...</div>}{error&&<div className="table-error">{error}</div>}
+      {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+      {filtered.map(u=><tr key={u.id}><td>#{u.id}</td><td><strong>{u.fullName}</strong><small>@{u.username}</small></td><td>{u.email}</td><td>{u.role}</td><td>{u.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(u);setShowForm(true)}}>Edit</button>{u.status==='ACTIVE'?<button className="secondary-button" onClick={()=>status(u.id,'INACTIVE')}>Deactivate</button>:<button className="secondary-button" onClick={()=>status(u.id,'ACTIVE')}>Activate</button>}<button className="secondary-button" onClick={()=>remove(u.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
+    </div>{showForm&&<UserForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}</div>
+}
 
-        <div className="module-content">
-
-          <div className="module-icon">
-            {icons[page]}
-          </div>
-
-          <h2>{page}</h2>
-
-          <p>
-            This module will display data from the RetailMax backend.
-          </p>
-
-          <button className="primary-button">
-            Open {page}
-          </button>
-
-        </div>
-
-      </div>
-  )
+function UserForm({initial,onClose,onSave}:{initial:UserAccount|null;onClose:()=>void;onSave:(data:UserAccount & {password?:string})=>Promise<void>}) {
+  const [form,setForm]=useState<any>({username:initial?.username||'',email:initial?.email||'',fullName:initial?.fullName||'',role:initial?.role||'SALES_USER',status:initial?.status||'ACTIVE',password:''})
+  const [saving,setSaving]=useState(false); const set=(k:string,v:any)=>setForm({...form,[k]:v})
+  const submit=async(e:React.FormEvent)=>{e.preventDefault();if(!initial&&!form.password){alert('Password is required for a new user.');return}setSaving(true);try{await onSave(form)}finally{setSaving(false)}}
+  return <Modal title={initial?'Edit User':'Add User'} onClose={onClose}><form onSubmit={submit}><FormGrid>
+    <FormField label="Username"><input required style={inputStyle} value={form.username} onChange={e=>set('username',e.target.value)}/></FormField>
+    <FormField label="Full Name"><input required style={inputStyle} value={form.fullName} onChange={e=>set('fullName',e.target.value)}/></FormField>
+    <FormField label="Email"><input required type="email" style={inputStyle} value={form.email} onChange={e=>set('email',e.target.value)}/></FormField>
+    <FormField label="Role"><select style={inputStyle} value={form.role} onChange={e=>set('role',e.target.value)}><option>ADMIN</option><option>SALES_USER</option><option>MANAGER</option></select></FormField>
+    <FormField label="Status"><select style={inputStyle} value={form.status} onChange={e=>set('status',e.target.value)}><option>ACTIVE</option><option>INACTIVE</option></select></FormField>
+    <FormField label={initial?'New Password (optional)':'Password'}><input required={!initial} type="password" style={inputStyle} value={form.password} onChange={e=>set('password',e.target.value)} /></FormField>
+  </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update User':'Create User'}/></form></Modal>
 }
 
 function App() {
@@ -1289,12 +866,21 @@ function App() {
                 <DealsPage />
             )}
 
-            {activePage !== 'Dashboard' &&
-                activePage !== 'Customers' &&
-                activePage !== 'Leads' &&
-                activePage !== 'Deals' && (
-                    <ModulePage page={activePage} />
-                )}
+            {activePage === 'Tasks' && (
+                <TasksPage />
+            )}
+
+            {activePage === 'Campaigns' && (
+                <CampaignsPage />
+            )}
+
+            {activePage === 'Notifications' && (
+                <NotificationsPage />
+            )}
+
+            {activePage === 'Users & Settings' && (
+                <UsersSettingsPage />
+            )}
 
           </div>
 
