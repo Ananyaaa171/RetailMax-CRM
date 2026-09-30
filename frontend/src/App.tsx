@@ -312,21 +312,21 @@ function Dashboard() {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(20,20,30,.45)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
+    }}>
       <div style={{
-        position: 'fixed', inset: 0, background: 'rgba(20,20,30,.45)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
+        width: 'min(720px, 96vw)', maxHeight: '90vh', overflowY: 'auto',
+        background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,.2)'
       }}>
-        <div style={{
-          width: 'min(720px, 96vw)', maxHeight: '90vh', overflowY: 'auto',
-          background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,.2)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ margin: 0 }}>{title}</h2>
-            <button type="button" className="secondary-button" onClick={onClose}>✕</button>
-          </div>
-          {children}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ margin: 0 }}>{title}</h2>
+          <button type="button" className="secondary-button" onClick={onClose}>✕</button>
         </div>
+        {children}
       </div>
+    </div>
   )
 }
 
@@ -336,10 +336,10 @@ function FormGrid({ children }: { children: React.ReactNode }) {
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600 }}>
-        {label}
-        {children}
-      </label>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600 }}>
+      {label}
+      {children}
+    </label>
   )
 }
 
@@ -350,10 +350,10 @@ const inputStyle: React.CSSProperties = {
 
 function ModalActions({ onClose, saving, label = 'Save Changes' }: { onClose: () => void; saving: boolean; label?: string }) {
   return (
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
-        <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
-        <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving...' : label}</button>
-      </div>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+      <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
+      <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving...' : label}</button>
+    </div>
   )
 }
 
@@ -401,29 +401,29 @@ function CustomersPage() {
   const filtered = customers.filter(c => `${c.firstName} ${c.lastName} ${c.email} ${c.phone} ${c.company}`.toLowerCase().includes(search.toLowerCase()))
 
   return (
-      <div className="module-page">
-        <div className="module-heading"><div><h1>Customers</h1><p>View and manage your customer information.</p></div>
-          <button className="primary-button" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add Customer</button></div>
-        <div className="customer-stats">
-          <div><span>Total Customers</span><strong>{customers.length}</strong></div>
-          <div><span>Companies</span><strong>{new Set(customers.map(c => c.company).filter(Boolean)).size}</strong></div>
-          <div><span>With Phone</span><strong>{customers.filter(c => c.phone).length}</strong></div>
-          <div><span>With Email</span><strong>{customers.filter(c => c.email).length}</strong></div>
-        </div>
-        <div className="customer-table-card">
-          <div className="table-header"><div><h2>Customer List</h2><p>Changes are saved directly to PostgreSQL.</p></div>
-            <input className="table-search" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-          {loading && <div className="table-message">Loading customers...</div>}
-          {error && <div className="table-error">{error}</div>}
-          {!loading && <div className="table-wrapper"><table><thead><tr><th>ID</th><th>Customer</th><th>Company</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
-            <tbody>{filtered.map(c => <tr key={c.id}>
-              <td>#{c.id}</td><td><div className="customer-name"><div className="customer-avatar">{c.firstName?.[0]}{c.lastName?.[0]}</div><div><strong>{c.firstName} {c.lastName}</strong><small>Customer</small></div></div></td>
-              <td>{c.company || '—'}</td><td>{c.email || '—'}</td><td>{c.phone || '—'}</td>
-              <td><div style={{display:'flex',gap:6}}><button className="secondary-button" onClick={() => { setEditing(c); setShowForm(true) }}>Edit</button><button className="secondary-button" onClick={() => remove(c.id)}>Delete</button></div></td>
-            </tr>)}</tbody></table></div>}
-        </div>
-        {showForm && <CustomerForm initial={editing} onClose={() => {setShowForm(false);setEditing(null)}} onSave={save} />}
+    <div className="module-page">
+      <div className="module-heading"><div><h1>Customers</h1><p>View and manage your customer information.</p></div>
+        <button className="primary-button" onClick={() => { setEditing(null); setShowForm(true) }}>+ Add Customer</button></div>
+      <div className="customer-stats">
+        <div><span>Total Customers</span><strong>{customers.length}</strong></div>
+        <div><span>Companies</span><strong>{new Set(customers.map(c => c.company).filter(Boolean)).size}</strong></div>
+        <div><span>With Phone</span><strong>{customers.filter(c => c.phone).length}</strong></div>
+        <div><span>With Email</span><strong>{customers.filter(c => c.email).length}</strong></div>
       </div>
+      <div className="customer-table-card">
+        <div className="table-header"><div><h2>Customer List</h2><p>Changes are saved automatically.</p></div>
+          <input className="table-search" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        {loading && <div className="table-message">Loading customers...</div>}
+        {error && <div className="table-error">{error}</div>}
+        {!loading && <div className="table-wrapper"><table><thead><tr><th>ID</th><th>Customer</th><th>Company</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+          <tbody>{filtered.map(c => <tr key={c.id}>
+            <td>#{c.id}</td><td><div className="customer-name"><div className="customer-avatar">{c.firstName?.[0]}{c.lastName?.[0]}</div><div><strong>{c.firstName} {c.lastName}</strong><small>Customer</small></div></div></td>
+            <td>{c.company || '—'}</td><td>{c.email || '—'}</td><td>{c.phone || '—'}</td>
+            <td><div style={{display:'flex',gap:6}}><button className="secondary-button" onClick={() => { setEditing(c); setShowForm(true) }}>Edit</button><button className="secondary-button" onClick={() => remove(c.id)}>Delete</button></div></td>
+          </tr>)}</tbody></table></div>}
+      </div>
+      {showForm && <CustomerForm initial={editing} onClose={() => {setShowForm(false);setEditing(null)}} onSave={save} />}
+    </div>
   )
 }
 
@@ -458,12 +458,12 @@ function LeadsPage() {
   return <div className="module-page">
     <div className="module-heading"><div><h1>Leads</h1><p>Track and manage potential customers.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Lead</button></div>
     <div className="customer-stats"><div><span>Total Leads</span><strong>{leads.length}</strong></div><div><span>Very Hot</span><strong>{leads.filter(l=>l.status==='VERY_HOT').length}</strong></div><div><span>Hot</span><strong>{leads.filter(l=>l.status==='HOT').length}</strong></div><div><span>Qualified</span><strong>{leads.filter(l=>l.status==='QUALIFIED').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Lead List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search leads..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Lead List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search leads..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading leads...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Lead</th><th>Email</th><th>Source</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-      {filtered.map(l=><tr key={l.id}><td>#{l.id}</td><td><div className="customer-name"><div className="customer-avatar">{l.firstName?.[0]}{l.lastName?.[0]}</div><div><strong>{l.firstName} {l.lastName}</strong><small>{l.phone}</small></div></div></td><td>{l.email||'—'}</td><td>{l.source||'—'}</td><td>{l.score}</td><td>{l.status?.replace(/_/g,' ')}</td>
-        <td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(l);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>calculate(l.id)}>Score</button><button className="secondary-button" onClick={()=>convert(l.id)}>Convert</button><button className="secondary-button" onClick={()=>remove(l.id)}>Delete</button></div></td>
-      </tr>)}</tbody></table></div>}
+        {filtered.map(l=><tr key={l.id}><td>#{l.id}</td><td><div className="customer-name"><div className="customer-avatar">{l.firstName?.[0]}{l.lastName?.[0]}</div><div><strong>{l.firstName} {l.lastName}</strong><small>{l.phone}</small></div></div></td><td>{l.email||'—'}</td><td>{l.source||'—'}</td><td>{l.score}</td><td>{l.status?.replace(/_/g,' ')}</td>
+          <td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(l);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>calculate(l.id)}>Score</button><button className="secondary-button" onClick={()=>convert(l.id)}>Convert</button><button className="secondary-button" onClick={()=>remove(l.id)}>Delete</button></div></td>
+        </tr>)}</tbody></table></div>}
     </div>
     {showForm&&<LeadForm initial={editing} onClose={()=>{setShowForm(false);setEditing(null)}} onSave={save}/>}
   </div>
@@ -496,7 +496,7 @@ function DealsPage() {
   return <div className="module-page">
     <div className="module-heading"><div><h1>Deals</h1><p>Manage sales opportunities and deal stages.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Deal</button></div>
     <div className="customer-stats"><div><span>Total Deals</span><strong>{deals.length}</strong></div><div><span>Pipeline Value</span><strong>₹{total.toLocaleString('en-IN')}</strong></div><div><span>Won Deals</span><strong>{deals.filter(d=>d.stage==='WON').length}</strong></div><div><span>Negotiations</span><strong>{deals.filter(d=>d.stage==='NEGOTIATION').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Deal List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search deals..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Deal List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search deals..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading deals...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Deal</th><th>Customer</th><th>Amount</th><th>Stage</th><th>Probability</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(d=><tr key={d.id}><td>#{d.id}</td><td><strong>{d.dealName}</strong></td><td>#{d.customerId}</td><td>₹{Number(d.amount||0).toLocaleString('en-IN')}</td><td>{d.stage}</td><td>{d.probability}</td><td><div style={{display:'flex',gap:5}}><button className="secondary-button" onClick={()=>{setEditing(d);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>remove(d.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -530,7 +530,7 @@ function TasksPage() {
   const filtered=tasks.filter(t=>`${t.title} ${t.description||''} ${t.taskType} ${t.status} ${t.priority}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Tasks</h1><p>Manage follow-ups and scheduled activities.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Task</button></div>
     <div className="customer-stats"><div><span>Total Tasks</span><strong>{tasks.length}</strong></div><div><span>Pending</span><strong>{tasks.filter(t=>t.status!=='COMPLETED').length}</strong></div><div><span>Completed</span><strong>{tasks.filter(t=>t.status==='COMPLETED').length}</strong></div><div><span>High Priority</span><strong>{tasks.filter(t=>t.priority==='HIGH').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Task List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Task List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading tasks...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Task</th><th>Type</th><th>Due</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(t=><tr key={t.id}><td>#{t.id}</td><td><strong>{t.title}</strong><small>{t.description}</small></td><td>{t.taskType}</td><td>{t.dueDate||'—'}</td><td>{t.priority}</td><td>{t.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(t);setShowForm(true)}}>Edit</button>{t.status!=='COMPLETED'&&<button className="secondary-button" onClick={()=>complete(t.id)}>Complete</button>}<button className="secondary-button" onClick={()=>remove(t.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -564,7 +564,7 @@ function CampaignsPage() {
   const filtered=items.filter(c=>`${c.campaignName} ${c.campaignType} ${c.status} ${c.targetAudience||''}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Campaigns</h1><p>Manage marketing campaigns and results.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Campaign</button></div>
     <div className="customer-stats"><div><span>Total Campaigns</span><strong>{items.length}</strong></div><div><span>Active</span><strong>{items.filter(c=>c.status==='ACTIVE').length}</strong></div><div><span>Budget</span><strong>₹{items.reduce((s,c)=>s+Number(c.budget||0),0).toLocaleString('en-IN')}</strong></div><div><span>Revenue</span><strong>₹{items.reduce((s,c)=>s+Number(c.revenueGenerated||0),0).toLocaleString('en-IN')}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Campaign List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search campaigns..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Campaign List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search campaigns..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading campaigns...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Campaign</th><th>Type</th><th>Budget</th><th>Leads</th><th>Revenue</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(c=><tr key={c.id}><td>#{c.id}</td><td><strong>{c.campaignName}</strong><small>{c.targetAudience||'—'}</small></td><td>{c.campaignType}</td><td>₹{Number(c.budget||0).toLocaleString('en-IN')}</td><td>{c.generatedLeads}/{c.targetLeads}</td><td>₹{Number(c.revenueGenerated||0).toLocaleString('en-IN')}</td><td>{c.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(c);setShowForm(true)}}>Edit</button>{c.status!=='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'ACTIVE')}>Activate</button>}{c.status==='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'PAUSED')}>Pause</button>}<button className="secondary-button" onClick={()=>remove(c.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -602,7 +602,7 @@ function NotificationsPage() {
   const filtered=items.filter(n=>`${n.title} ${n.message} ${n.type} ${n.priority}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Notifications</h1><p>View important CRM notifications.</p></div><button className="primary-button" onClick={()=>setShowForm(true)}>+ Add Notification</button></div>
     <div className="customer-stats"><div><span>Total</span><strong>{items.length}</strong></div><div><span>Unread</span><strong>{items.filter(n=>!n.isRead).length}</strong></div><div><span>High Priority</span><strong>{items.filter(n=>n.priority==='HIGH').length}</strong></div><div><span>Read</span><strong>{items.filter(n=>n.isRead).length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Notification List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search notifications..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Notification List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search notifications..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading notifications...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Notification</th><th>Type</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(n=><tr key={n.id}><td>#{n.id}</td><td><strong>{n.title}</strong><small>{n.message}</small></td><td>{n.type}</td><td>{n.priority}</td><td>{n.isRead?'READ':'UNREAD'}</td><td><div style={{display:'flex',gap:5}}>{n.isRead?<button className="secondary-button" onClick={()=>unread(n.id)}>Mark Unread</button>:<button className="secondary-button" onClick={()=>read(n.id)}>Mark Read</button>}<button className="secondary-button" onClick={()=>remove(n.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -635,7 +635,7 @@ function UsersSettingsPage() {
   const filtered=users.filter(u=>`${u.username} ${u.email} ${u.fullName} ${u.role} ${u.status}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Users & Settings</h1><p>Manage system users and settings.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add User</button></div>
     <div className="customer-stats"><div><span>Total Users</span><strong>{users.length}</strong></div><div><span>Active</span><strong>{users.filter(u=>u.status==='ACTIVE').length}</strong></div><div><span>Administrators</span><strong>{users.filter(u=>u.role==='ADMIN').length}</strong></div><div><span>Inactive</span><strong>{users.filter(u=>u.status!=='ACTIVE').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>User List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search users..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>User List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search users..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading users...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(u=><tr key={u.id}><td>#{u.id}</td><td><strong>{u.fullName}</strong><small>@{u.username}</small></td><td>{u.email}</td><td>{u.role}</td><td>{u.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(u);setShowForm(true)}}>Edit</button>{u.status==='ACTIVE'?<button className="secondary-button" onClick={()=>status(u.id,'INACTIVE')}>Deactivate</button>:<button className="secondary-button" onClick={()=>status(u.id,'ACTIVE')}>Activate</button>}<button className="secondary-button" onClick={()=>remove(u.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -659,9 +659,15 @@ function UserForm({initial,onClose,onSave}:{initial:UserAccount|null;onClose:()=
 function App() {
 
   const [activePage, setActivePage] = useState('Dashboard')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('retailmax-dark-mode') === 'true')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark-mode', darkMode)
+    localStorage.setItem('retailmax-dark-mode', String(darkMode))
+  }, [darkMode])
 
   return (
-      <div className="app">
+      <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
 
         <aside className="sidebar">
 
@@ -827,6 +833,19 @@ function App() {
                 />
 
               </div>
+
+              <button
+                className="theme-toggle"
+                type="button"
+                onClick={() => setDarkMode((value) => !value)}
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                <span className="theme-toggle-track">
+                  <span className="theme-toggle-thumb">{darkMode ? '☾' : '☀'}</span>
+                </span>
+                <span className="theme-toggle-label">{darkMode ? 'Dark' : 'Light'}</span>
+              </button>
 
               <button className="header-icon">
                 ♧
