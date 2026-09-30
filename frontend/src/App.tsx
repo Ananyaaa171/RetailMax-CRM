@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 type Customer = {
@@ -80,16 +80,83 @@ type UserAccount = {
   status: string
 }
 
-const menuItems = [
-  { name: 'Dashboard', icon: '▦', count: '' },
-  { name: 'Customers', icon: '◯', count: '12' },
-  { name: 'Leads', icon: '◇', count: '13' },
-  { name: 'Deals', icon: '◆', count: '15' },
-  { name: 'Tasks', icon: '✓', count: '13' },
-  { name: 'Campaigns', icon: '✦', count: '' },
-  { name: 'Notifications', icon: '♧', count: '6' },
-  { name: 'Users & Settings', icon: '⚙', count: '' },
-]
+
+function CustomerSupport() {
+  const [open, setOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  return (
+    <>
+      <section className="customer-support">
+        <div className="support-mark">?</div>
+        <div className="support-copy">
+          <span>CUSTOMER SUPPORT</span>
+          <h2>Need a hand?</h2>
+          <p>Contact the RetailMax support team for help with your workspace.</p>
+        </div>
+        <div className="support-options">
+          <div><small>RESPONSE</small><strong>Within 1 business day</strong></div>
+          <div><small>CHANNEL</small><strong>Support request</strong></div>
+          <button type="button" onClick={() => { setOpen(true); setSubmitted(false) }}>
+            Contact Support →
+          </button>
+        </div>
+      </section>
+
+      {open && (
+        <div className="support-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false) }}>
+          <div className="support-panel">
+            <div className="support-panel-head">
+              <div>
+                <span>CUSTOMER SUPPORT</span>
+                <h2>How can we help?</h2>
+              </div>
+              <button type="button" className="support-close" onClick={() => setOpen(false)}>×</button>
+            </div>
+
+            {submitted ? (
+              <div className="support-success">
+                <div>✓</div>
+                <h3>Request received</h3>
+                <p>Your support request has been recorded. Our team will follow up.</p>
+                <button type="button" onClick={() => setOpen(false)}>Close</button>
+              </div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }}>
+                <label>
+                  <span>Topic</span>
+                  <select required defaultValue="">
+                    <option value="" disabled>Select a topic</option>
+                    <option>Account & access</option>
+                    <option>Customers & leads</option>
+                    <option>Deals & sales</option>
+                    <option>Tasks & campaigns</option>
+                    <option>Something else</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Subject</span>
+                  <input required placeholder="What do you need help with?" />
+                </label>
+
+                <label>
+                  <span>Message</span>
+                  <textarea required rows={5} placeholder="Describe the issue or question..." />
+                </label>
+
+                <div className="support-form-actions">
+                  <button type="button" className="support-cancel" onClick={() => setOpen(false)}>Cancel</button>
+                  <button type="submit" className="support-submit">Send Request</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
 
 function Dashboard() {
   return (
@@ -305,6 +372,8 @@ function Dashboard() {
 
         </section>
 
+        <CustomerSupport />
+
       </div>
   )
 }
@@ -312,17 +381,14 @@ function Dashboard() {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(20,20,30,.45)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20
-    }}>
-      <div style={{
-        width: 'min(720px, 96vw)', maxHeight: '90vh', overflowY: 'auto',
-        background: '#fff', borderRadius: 14, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,.2)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ margin: 0 }}>{title}</h2>
-          <button type="button" className="secondary-button" onClick={onClose}>✕</button>
+    <div className="rm-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="rm-modal" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="rm-modal-head">
+          <div>
+            <span className="rm-kicker">RETAILMAX</span>
+            <h2>{title}</h2>
+          </div>
+          <button type="button" className="rm-icon-button" onClick={onClose} aria-label="Close">×</button>
         </div>
         {children}
       </div>
@@ -331,28 +397,35 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 }
 
 function FormGrid({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>{children}</div>
+  return <div className="rm-form-grid">{children}</div>
 }
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 600 }}>
-      {label}
+    <label className="rm-form-field">
+      <span>{label}</span>
       {children}
     </label>
   )
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box', padding: '10px 12px', border: '1px solid #d9dbe3',
-  borderRadius: 8, fontSize: 14, background: '#fff'
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '11px 12px',
+  border: '1px solid var(--field-border)',
+  borderRadius: 7,
+  fontSize: 14,
+  background: 'var(--field-bg)',
+  color: 'var(--text)',
+  outline: 'none',
 }
 
 function ModalActions({ onClose, saving, label = 'Save Changes' }: { onClose: () => void; saving: boolean; label?: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+    <div className="rm-modal-actions">
       <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
-      <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving...' : label}</button>
+      <button type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving…' : label}</button>
     </div>
   )
 }
@@ -411,7 +484,7 @@ function CustomersPage() {
         <div><span>With Email</span><strong>{customers.filter(c => c.email).length}</strong></div>
       </div>
       <div className="customer-table-card">
-        <div className="table-header"><div><h2>Customer List</h2><p>Changes are saved automatically.</p></div>
+        <div className="table-header"><div><h2>Customer List</h2><p>Changes are saved directly to PostgreSQL.</p></div>
           <input className="table-search" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} /></div>
         {loading && <div className="table-message">Loading customers...</div>}
         {error && <div className="table-error">{error}</div>}
@@ -458,7 +531,7 @@ function LeadsPage() {
   return <div className="module-page">
     <div className="module-heading"><div><h1>Leads</h1><p>Track and manage potential customers.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Lead</button></div>
     <div className="customer-stats"><div><span>Total Leads</span><strong>{leads.length}</strong></div><div><span>Very Hot</span><strong>{leads.filter(l=>l.status==='VERY_HOT').length}</strong></div><div><span>Hot</span><strong>{leads.filter(l=>l.status==='HOT').length}</strong></div><div><span>Qualified</span><strong>{leads.filter(l=>l.status==='QUALIFIED').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Lead List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search leads..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Lead List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search leads..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading leads...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Lead</th><th>Email</th><th>Source</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead><tbody>
         {filtered.map(l=><tr key={l.id}><td>#{l.id}</td><td><div className="customer-name"><div className="customer-avatar">{l.firstName?.[0]}{l.lastName?.[0]}</div><div><strong>{l.firstName} {l.lastName}</strong><small>{l.phone}</small></div></div></td><td>{l.email||'—'}</td><td>{l.source||'—'}</td><td>{l.score}</td><td>{l.status?.replace(/_/g,' ')}</td>
@@ -496,7 +569,7 @@ function DealsPage() {
   return <div className="module-page">
     <div className="module-heading"><div><h1>Deals</h1><p>Manage sales opportunities and deal stages.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Deal</button></div>
     <div className="customer-stats"><div><span>Total Deals</span><strong>{deals.length}</strong></div><div><span>Pipeline Value</span><strong>₹{total.toLocaleString('en-IN')}</strong></div><div><span>Won Deals</span><strong>{deals.filter(d=>d.stage==='WON').length}</strong></div><div><span>Negotiations</span><strong>{deals.filter(d=>d.stage==='NEGOTIATION').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Deal List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search deals..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Deal List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search deals..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading deals...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Deal</th><th>Customer</th><th>Amount</th><th>Stage</th><th>Probability</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(d=><tr key={d.id}><td>#{d.id}</td><td><strong>{d.dealName}</strong></td><td>#{d.customerId}</td><td>₹{Number(d.amount||0).toLocaleString('en-IN')}</td><td>{d.stage}</td><td>{d.probability}</td><td><div style={{display:'flex',gap:5}}><button className="secondary-button" onClick={()=>{setEditing(d);setShowForm(true)}}>Edit</button><button className="secondary-button" onClick={()=>remove(d.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -530,7 +603,7 @@ function TasksPage() {
   const filtered=tasks.filter(t=>`${t.title} ${t.description||''} ${t.taskType} ${t.status} ${t.priority}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Tasks</h1><p>Manage follow-ups and scheduled activities.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Task</button></div>
     <div className="customer-stats"><div><span>Total Tasks</span><strong>{tasks.length}</strong></div><div><span>Pending</span><strong>{tasks.filter(t=>t.status!=='COMPLETED').length}</strong></div><div><span>Completed</span><strong>{tasks.filter(t=>t.status==='COMPLETED').length}</strong></div><div><span>High Priority</span><strong>{tasks.filter(t=>t.priority==='HIGH').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Task List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Task List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search tasks..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading tasks...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Task</th><th>Type</th><th>Due</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(t=><tr key={t.id}><td>#{t.id}</td><td><strong>{t.title}</strong><small>{t.description}</small></td><td>{t.taskType}</td><td>{t.dueDate||'—'}</td><td>{t.priority}</td><td>{t.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(t);setShowForm(true)}}>Edit</button>{t.status!=='COMPLETED'&&<button className="secondary-button" onClick={()=>complete(t.id)}>Complete</button>}<button className="secondary-button" onClick={()=>remove(t.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -564,7 +637,7 @@ function CampaignsPage() {
   const filtered=items.filter(c=>`${c.campaignName} ${c.campaignType} ${c.status} ${c.targetAudience||''}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Campaigns</h1><p>Manage marketing campaigns and results.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add Campaign</button></div>
     <div className="customer-stats"><div><span>Total Campaigns</span><strong>{items.length}</strong></div><div><span>Active</span><strong>{items.filter(c=>c.status==='ACTIVE').length}</strong></div><div><span>Budget</span><strong>₹{items.reduce((s,c)=>s+Number(c.budget||0),0).toLocaleString('en-IN')}</strong></div><div><span>Revenue</span><strong>₹{items.reduce((s,c)=>s+Number(c.revenueGenerated||0),0).toLocaleString('en-IN')}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Campaign List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search campaigns..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Campaign List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search campaigns..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading campaigns...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Campaign</th><th>Type</th><th>Budget</th><th>Leads</th><th>Revenue</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(c=><tr key={c.id}><td>#{c.id}</td><td><strong>{c.campaignName}</strong><small>{c.targetAudience||'—'}</small></td><td>{c.campaignType}</td><td>₹{Number(c.budget||0).toLocaleString('en-IN')}</td><td>{c.generatedLeads}/{c.targetLeads}</td><td>₹{Number(c.revenueGenerated||0).toLocaleString('en-IN')}</td><td>{c.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(c);setShowForm(true)}}>Edit</button>{c.status!=='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'ACTIVE')}>Activate</button>}{c.status==='ACTIVE'&&<button className="secondary-button" onClick={()=>status(c.id,'PAUSED')}>Pause</button>}<button className="secondary-button" onClick={()=>remove(c.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -602,7 +675,7 @@ function NotificationsPage() {
   const filtered=items.filter(n=>`${n.title} ${n.message} ${n.type} ${n.priority}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Notifications</h1><p>View important CRM notifications.</p></div><button className="primary-button" onClick={()=>setShowForm(true)}>+ Add Notification</button></div>
     <div className="customer-stats"><div><span>Total</span><strong>{items.length}</strong></div><div><span>Unread</span><strong>{items.filter(n=>!n.isRead).length}</strong></div><div><span>High Priority</span><strong>{items.filter(n=>n.priority==='HIGH').length}</strong></div><div><span>Read</span><strong>{items.filter(n=>n.isRead).length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>Notification List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search notifications..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>Notification List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search notifications..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading notifications...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>Notification</th><th>Type</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(n=><tr key={n.id}><td>#{n.id}</td><td><strong>{n.title}</strong><small>{n.message}</small></td><td>{n.type}</td><td>{n.priority}</td><td>{n.isRead?'READ':'UNREAD'}</td><td><div style={{display:'flex',gap:5}}>{n.isRead?<button className="secondary-button" onClick={()=>unread(n.id)}>Mark Unread</button>:<button className="secondary-button" onClick={()=>read(n.id)}>Mark Read</button>}<button className="secondary-button" onClick={()=>remove(n.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -635,7 +708,7 @@ function UsersSettingsPage() {
   const filtered=users.filter(u=>`${u.username} ${u.email} ${u.fullName} ${u.role} ${u.status}`.toLowerCase().includes(search.toLowerCase()))
   return <div className="module-page"><div className="module-heading"><div><h1>Users & Settings</h1><p>Manage system users and settings.</p></div><button className="primary-button" onClick={()=>{setEditing(null);setShowForm(true)}}>+ Add User</button></div>
     <div className="customer-stats"><div><span>Total Users</span><strong>{users.length}</strong></div><div><span>Active</span><strong>{users.filter(u=>u.status==='ACTIVE').length}</strong></div><div><span>Administrators</span><strong>{users.filter(u=>u.role==='ADMIN').length}</strong></div><div><span>Inactive</span><strong>{users.filter(u=>u.status!=='ACTIVE').length}</strong></div></div>
-    <div className="customer-table-card"><div className="table-header"><div><h2>User List</h2><p>Changes are saved automatically.</p></div><input className="table-search" placeholder="Search users..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+    <div className="customer-table-card"><div className="table-header"><div><h2>User List</h2><p>Changes are saved directly to PostgreSQL.</p></div><input className="table-search" placeholder="Search users..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       {loading&&<div className="table-message">Loading users...</div>}{error&&<div className="table-error">{error}</div>}
       {!loading&&<div className="table-wrapper"><table><thead><tr><th>ID</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>
       {filtered.map(u=><tr key={u.id}><td>#{u.id}</td><td><strong>{u.fullName}</strong><small>@{u.username}</small></td><td>{u.email}</td><td>{u.role}</td><td>{u.status}</td><td><div style={{display:'flex',gap:5,flexWrap:'wrap'}}><button className="secondary-button" onClick={()=>{setEditing(u);setShowForm(true)}}>Edit</button>{u.status==='ACTIVE'?<button className="secondary-button" onClick={()=>status(u.id,'INACTIVE')}>Deactivate</button>:<button className="secondary-button" onClick={()=>status(u.id,'ACTIVE')}>Activate</button>}<button className="secondary-button" onClick={()=>remove(u.id)}>Delete</button></div></td></tr>)}</tbody></table></div>}
@@ -656,256 +729,222 @@ function UserForm({initial,onClose,onSave}:{initial:UserAccount|null;onClose:()=
   </FormGrid><ModalActions onClose={onClose} saving={saving} label={initial?'Update User':'Create User'}/></form></Modal>
 }
 
-function App() {
 
+function CursorTrail({ enabled }: { enabled: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const pointsRef = useRef<Array<{ x: number; y: number; life: number }>>([])
+  const mouseRef = useRef({ x: -100, y: -100, active: false })
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animationFrame = 0
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = Math.floor(window.innerWidth * dpr)
+      canvas.height = Math.floor(window.innerHeight * dpr)
+      canvas.style.width = `${window.innerWidth}px`
+      canvas.style.height = `${window.innerHeight}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    const move = (event: MouseEvent) => {
+      if (!enabled) return
+      mouseRef.current = { x: event.clientX, y: event.clientY, active: true }
+      const last = pointsRef.current[pointsRef.current.length - 1]
+      const distance = last
+        ? Math.hypot(event.clientX - last.x, event.clientY - last.y)
+        : 999
+
+      if (distance > 2) {
+        pointsRef.current.push({ x: event.clientX, y: event.clientY, life: 1 })
+        if (pointsRef.current.length > 34) pointsRef.current.shift()
+      }
+    }
+
+    const leave = () => {
+      mouseRef.current.active = false
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+
+      if (enabled) {
+        const points = pointsRef.current
+
+        for (let i = 0; i < points.length; i++) {
+          const p = points[i]
+          p.life -= 0.018
+        }
+
+        while (points.length && points[0].life <= 0) points.shift()
+
+        if (points.length > 1) {
+          ctx.lineCap = 'round'
+          ctx.lineJoin = 'round'
+
+          for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1]
+            const point = points[i]
+            const alpha = Math.max(0, Math.min(prev.life, point.life))
+            const width = 1.5 + (i / points.length) * 5
+
+            ctx.beginPath()
+            ctx.moveTo(prev.x, prev.y)
+            ctx.lineTo(point.x, point.y)
+            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha * 0.85})`
+            ctx.lineWidth = width
+            ctx.shadowColor = `rgba(16, 185, 129, ${alpha * 0.8})`
+            ctx.shadowBlur = 9
+            ctx.stroke()
+          }
+
+          const head = points[points.length - 1]
+          if (mouseRef.current.active) {
+            ctx.beginPath()
+            ctx.arc(head.x, head.y, 4, 0, Math.PI * 2)
+            ctx.fillStyle = '#34d399'
+            ctx.shadowColor = '#10b981'
+            ctx.shadowBlur = 16
+            ctx.fill()
+          }
+        }
+      } else {
+        pointsRef.current = []
+      }
+
+      animationFrame = requestAnimationFrame(draw)
+    }
+
+    resize()
+    window.addEventListener('resize', resize)
+    window.addEventListener('mousemove', move)
+    window.addEventListener('mouseleave', leave)
+    animationFrame = requestAnimationFrame(draw)
+
+    return () => {
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', move)
+      window.removeEventListener('mouseleave', leave)
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [enabled])
+
+  return <canvas ref={canvasRef} className="cursor-trail-canvas" aria-hidden="true" />
+}
+
+function App() {
   const [activePage, setActivePage] = useState('Dashboard')
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('retailmax-dark-mode') === 'true')
+  const [cursorTrail, setCursorTrail] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark-mode', darkMode)
     localStorage.setItem('retailmax-dark-mode', String(darkMode))
   }, [darkMode])
 
+  const nav = [
+    { label: 'Dashboard', code: '01' },
+    { label: 'Customers', code: '02' },
+    { label: 'Leads', code: '03' },
+    { label: 'Deals', code: '04' },
+    { label: 'Tasks', code: '05' },
+    { label: 'Campaigns', code: '06' },
+    { label: 'Notifications', code: '07' },
+    { label: 'Users & Settings', code: '08' },
+  ]
+
+  const renderPage = () => {
+    switch (activePage) {
+      case 'Customers': return <CustomersPage />
+      case 'Leads': return <LeadsPage />
+      case 'Deals': return <DealsPage />
+      case 'Tasks': return <TasksPage />
+      case 'Campaigns': return <CampaignsPage />
+      case 'Notifications': return <NotificationsPage />
+      case 'Users & Settings': return <UsersSettingsPage />
+      default: return <Dashboard />
+    }
+  }
+
   return (
-      <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
-
-        <aside className="sidebar">
-
-          <div className="logo">
-
-            <div className="logo-box">
-              R
-            </div>
-
-            <div>
-              <h2>
-                Retail<span>Max</span>
-              </h2>
-
-              <p>CRM</p>
-            </div>
-
-          </div>
-
-          <nav>
-
-            <p className="menu-title">
-              MAIN
-            </p>
-
-            {menuItems.slice(0, 5).map((item) => (
-
-                <button
-                    key={item.name}
-                    className={`menu ${
-                        activePage === item.name ? 'active' : ''
-                    }`}
-                    onClick={() => setActivePage(item.name)}
-                >
-
-              <span>
-                {item.icon}
-              </span>
-
-                  {item.name}
-
-                  {item.count && (
-                      <small>
-                        {item.count}
-                      </small>
-                  )}
-
-                </button>
-
-            ))}
-
-            <p className="menu-title">
-              MARKETING
-            </p>
-
-            {menuItems.slice(5, 7).map((item) => (
-
-                <button
-                    key={item.name}
-                    className={`menu ${
-                        activePage === item.name ? 'active' : ''
-                    }`}
-                    onClick={() => setActivePage(item.name)}
-                >
-
-              <span>
-                {item.icon}
-              </span>
-
-                  {item.name}
-
-                  {item.count && (
-                      <small
-                          className={
-                            item.name === 'Notifications'
-                                ? 'red'
-                                : ''
-                          }
-                      >
-                        {item.count}
-                      </small>
-                  )}
-
-                </button>
-
-            ))}
-
-            <p className="menu-title">
-              SYSTEM
-            </p>
-
-            {menuItems.slice(7).map((item) => (
-
-                <button
-                    key={item.name}
-                    className={`menu ${
-                        activePage === item.name ? 'active' : ''
-                    }`}
-                    onClick={() => setActivePage(item.name)}
-                >
-
-              <span>
-                {item.icon}
-              </span>
-
-                  {item.name}
-
-                </button>
-
-            ))}
-
-          </nav>
-
-          <div className="user-box">
-
-            <div className="user-avatar">
-              SA
-            </div>
-
-            <div>
-              <strong>
-                System Admin
-              </strong>
-
-              <p>
-                Administrator
-              </p>
-            </div>
-
-          </div>
-
-        </aside>
-
-        <main className="main">
-
-          <header className="header">
-
-            <div>
-
-              <h1>
-                {activePage}
-              </h1>
-
-              <p>
-                {activePage === 'Dashboard'
-                    ? 'Overview of your CRM activity'
-                    : `Manage your ${activePage.toLowerCase()}`}
-              </p>
-
-            </div>
-
-            <div className="header-right">
-
-              <div className="search">
-
-              <span>
-                ⌕
-              </span>
-
-                <input
-                    type="text"
-                    placeholder="Search..."
-                />
-
-              </div>
-
-              <button
-                className="theme-toggle"
-                type="button"
-                onClick={() => setDarkMode((value) => !value)}
-                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                <span className="theme-toggle-track">
-                  <span className="theme-toggle-thumb">{darkMode ? '☾' : '☀'}</span>
-                </span>
-                <span className="theme-toggle-label">{darkMode ? 'Dark' : 'Light'}</span>
-              </button>
-
-              <button className="header-icon">
-                ♧
-              </button>
-
-              <div className="header-user">
-
-                <div className="user-avatar small">
-                  SA
-                </div>
-
-                <span>
-                System Admin
-              </span>
-
-              </div>
-
-            </div>
-
-          </header>
-
-          <div className="content">
-
-            {activePage === 'Dashboard' && (
-                <Dashboard />
-            )}
-
-            {activePage === 'Customers' && (
-                <CustomersPage />
-            )}
-
-            {activePage === 'Leads' && (
-                <LeadsPage />
-            )}
-
-            {activePage === 'Deals' && (
-                <DealsPage />
-            )}
-
-            {activePage === 'Tasks' && (
-                <TasksPage />
-            )}
-
-            {activePage === 'Campaigns' && (
-                <CampaignsPage />
-            )}
-
-            {activePage === 'Notifications' && (
-                <NotificationsPage />
-            )}
-
-            {activePage === 'Users & Settings' && (
-                <UsersSettingsPage />
-            )}
-
-          </div>
-
-        </main>
-
+    <div className={`editorial-app ${darkMode ? 'dark-editorial' : ''}`}>
+      <CursorTrail enabled={cursorTrail} />
+      <header className="editorial-header">
+        <button className="wordmark" type="button" onClick={() => setActivePage('Dashboard')}>
+          <span className="wordmark-mark">RM</span>
+          <span className="wordmark-name">retailmax</span>
+        </button>
+
+        <nav className="top-nav" aria-label="Primary navigation">
+          {nav.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className={`top-nav-item ${activePage === item.label ? 'selected' : ''}`}
+              onClick={() => setActivePage(item.label)}
+            >
+              <span>{item.code}</span>
+              <b>{item.label}</b>
+            </button>
+          ))}
+        </nav>
+
+        <div className="header-tools">
+          <button
+            className={`trail-switch ${cursorTrail ? 'active' : ''}`}
+            type="button"
+            onClick={() => setCursorTrail((value) => !value)}
+            title={cursorTrail ? 'Turn off emerald cursor trail' : 'Turn on emerald cursor trail'}
+            aria-label={cursorTrail ? 'Turn off emerald cursor trail' : 'Turn on emerald cursor trail'}
+          >
+            <span className="trail-dot" />
+            TRAIL
+          </button>
+          <button
+            className="mode-switch"
+            type="button"
+            onClick={() => setDarkMode((value) => !value)}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? 'LIGHT' : 'DARK'}
+          </button>
+        </div>
+      </header>
+
+      <div className="editorial-strip">
+        <span>CRM / OPERATIONS</span>
+        <span>{activePage.toUpperCase()}</span>
+        <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
       </div>
+
+      <main className="editorial-main">
+        <div className="page-number">
+          <span>{String(nav.findIndex((item) => item.label === activePage) + 1).padStart(2, '0')}</span>
+          <em>/</em>
+          <small>08</small>
+        </div>
+
+        <div className="page-title-row">
+          <h1>{activePage}</h1>
+          <div className="title-rule" />
+        </div>
+
+        {renderPage()}
+      </main>
+
+      <footer className="editorial-footer">
+        <span>RETAILMAX CRM</span>
+        <span>WORKSPACE</span>
+        <span>© 2026</span>
+      </footer>
+    </div>
   )
 }
 
