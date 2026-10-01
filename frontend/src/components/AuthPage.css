@@ -1,0 +1,920 @@
+/* =========================================================
+   RETAILMAX AUTHENTICATION
+   MATCHES EXISTING CRM FRONTEND
+   ========================================================= */
+
+@import url(
+  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@500;600;700&display=swap'
+);
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.rm-auth {
+  min-height: 100vh;
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+
+  box-sizing: border-box;
+
+  padding: 40px;
+
+  background: #f2eee4;
+
+  color: #171918;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   BACKGROUND STRUCTURE
+   ========================================================= */
+
+.rm-auth::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(23, 25, 24, 0.055) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(23, 25, 24, 0.055) 1px,
+      transparent 1px
+    );
+
+  background-size: 59px 59px;
+}
+
+
+/* =========================================================
+   TOP LEFT BRAND
+   ========================================================= */
+
+.rm-auth-brand {
+  position: absolute;
+
+  top: 18px;
+  left: 18px;
+
+  z-index: 10;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  height: 40px;
+
+  padding-right: 18px;
+
+  border-right: 1px solid #bcb7aa;
+
+  color: #171918;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 15px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.05em;
+}
+
+
+.rm-auth-mark {
+  width: 28px;
+  height: 28px;
+
+  display: grid;
+
+  place-items: center;
+
+  background: #171918;
+
+  color: #f2eee4;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 8px;
+
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   REMOVE OLD LEFT-SIDE DESIGN
+   ========================================================= */
+
+.rm-auth-visual {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  pointer-events: none;
+}
+
+
+/* Hide old visual content */
+
+.rm-auth-visual-copy {
+  display: none;
+}
+
+
+.rm-auth-index {
+  position: absolute;
+
+  left: 50%;
+
+  bottom: 17px;
+
+  transform: translateX(-50%);
+
+  display: flex;
+
+  gap: 35px;
+
+  color: #8b867b;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  letter-spacing: 0.12em;
+
+  white-space: nowrap;
+}
+
+
+.rm-auth-index::before {
+  display: none;
+}
+
+
+.rm-auth-index::after {
+  content: "RETAILMAX CRM";
+
+  color: #8b867b;
+
+  width: auto;
+
+  height: auto;
+
+  background: none;
+}
+
+
+/* =========================================================
+   AUTH AREA
+   ========================================================= */
+
+.rm-auth-panel {
+  min-height: auto;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0;
+
+  background: transparent;
+}
+
+
+/* =========================================================
+   LOGIN BLOCK
+   ========================================================= */
+
+.rm-auth-form-shell {
+  position: relative;
+
+  z-index: 5;
+
+  width: min(500px, 100%);
+
+  padding: 38px 40px 34px;
+
+  box-sizing: border-box;
+
+  background: #ebe5d9;
+
+  border: 1px solid #171918;
+
+  box-shadow:
+    10px 10px 0 #3155d9;
+}
+
+
+/* =========================================================
+   TOP BLUE STRIP
+   ========================================================= */
+
+.rm-auth-form-shell::before {
+  content: "RETAILMAX / WORKSPACE ACCESS";
+
+  position: absolute;
+
+  left: -1px;
+
+  top: -30px;
+
+  height: 29px;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 0 13px;
+
+  box-sizing: border-box;
+
+  background: #3155d9;
+
+  color: #ffffff;
+
+  border: 1px solid #171918;
+
+  border-bottom: 0;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  font-weight: 500;
+
+  letter-spacing: 0.13em;
+}
+
+
+/* =========================================================
+   BOTTOM INFORMATION
+   ========================================================= */
+
+.rm-auth-form-shell::after {
+  content:
+    "CRM / OPERATIONS     •     SECURE ACCESS     •     2026";
+
+  display: block;
+
+  margin-top: 23px;
+
+  padding-top: 14px;
+
+  border-top: 1px solid #bdb8ac;
+
+  color: #898478;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  letter-spacing: 0.08em;
+
+  text-align: left;
+}
+
+
+/* =========================================================
+   HEADING
+   ========================================================= */
+
+.rm-auth-heading {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 14px;
+
+  margin-bottom: 27px;
+
+  padding-bottom: 19px;
+
+  border-bottom: 1px solid #171918;
+}
+
+
+/* =========================================================
+   SECTION NUMBER
+   ========================================================= */
+
+.rm-auth-number {
+  width: 28px;
+  height: 20px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  margin-top: 2px;
+
+  background: #3155d9;
+
+  color: #ffffff;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   HEADING KICKER
+   ========================================================= */
+
+.rm-auth-heading .rm-auth-kicker {
+  margin-bottom: 7px;
+
+  color: #777166;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  letter-spacing: 0.12em;
+}
+
+
+.rm-auth-heading .rm-auth-kicker::before {
+  display: none;
+}
+
+
+/* =========================================================
+   MAIN TITLE
+   ========================================================= */
+
+.rm-auth-heading h2 {
+  margin: 0;
+
+  color: #171918;
+
+  font-family:
+    "Playfair Display",
+    Georgia,
+    serif;
+
+  font-size: 39px;
+
+  line-height: 0.95;
+
+  font-weight: 600;
+
+  letter-spacing: -0.055em;
+}
+
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.rm-auth-form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+
+/* =========================================================
+   LABEL
+   ========================================================= */
+
+.rm-auth-form label {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.rm-auth-form label > span {
+  color: #716d63;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  font-weight: 500;
+
+  letter-spacing: 0.13em;
+}
+
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.rm-auth-form input {
+  width: 100%;
+
+  height: 42px;
+
+  box-sizing: border-box;
+
+  padding: 0 12px;
+
+  border: 1px solid #aaa498;
+
+  border-radius: 0;
+
+  outline: none;
+
+  background: #f5f0e6;
+
+  color: #171918;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 12px;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+
+.rm-auth-form input::placeholder {
+  color: #aaa499;
+}
+
+
+.rm-auth-form input:hover {
+  border-color: #5f5b52;
+}
+
+
+.rm-auth-form input:focus {
+  border-color: #3155d9;
+
+  background: #f8f4eb;
+
+  box-shadow:
+    3px 3px 0 #3155d9;
+}
+
+
+/* =========================================================
+   PASSWORD
+   ========================================================= */
+
+.rm-auth-password {
+  display: flex;
+
+  align-items: center;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+  border: 1px solid #aaa498;
+
+  background: #f5f0e6;
+}
+
+
+.rm-auth-password input {
+  border: 0;
+
+  background: transparent;
+
+  box-shadow: none;
+}
+
+
+.rm-auth-password input:focus {
+  border: 0;
+
+  box-shadow: none;
+}
+
+
+.rm-auth-password:focus-within {
+  border-color: #3155d9;
+
+  box-shadow:
+    3px 3px 0 #3155d9;
+}
+
+
+.rm-auth-password button {
+  height: 40px;
+
+  padding: 0 12px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #69655c;
+
+  cursor: pointer;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  font-weight: 500;
+
+  letter-spacing: 0.1em;
+}
+
+
+.rm-auth-password button:hover {
+  color: #3155d9;
+}
+
+
+/* =========================================================
+   ALERT
+   ========================================================= */
+
+.rm-auth-alert {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 9px 11px;
+
+  border: 1px solid;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 10px;
+
+  line-height: 1.4;
+}
+
+
+.rm-auth-error {
+  border-color: #c6aaa4;
+
+  background: #f0ded9;
+
+  color: #913d32;
+}
+
+
+.rm-auth-success {
+  border-color: #9ab6a5;
+
+  background: #dce9df;
+
+  color: #326148;
+}
+
+
+.rm-auth-alert strong {
+  width: 17px;
+  height: 17px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   SUBMIT
+   ========================================================= */
+
+.rm-auth-submit {
+  width: 100%;
+
+  height: 44px;
+
+  margin-top: 3px;
+
+  border: 1px solid #171918;
+
+  border-radius: 0;
+
+  background: #171918;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+
+.rm-auth-submit:hover:not(:disabled) {
+  background: #3155d9;
+
+  border-color: #3155d9;
+
+  transform: translate(-2px, -2px);
+
+  box-shadow:
+    4px 4px 0 #171918;
+}
+
+
+.rm-auth-submit:active:not(:disabled) {
+  transform: translate(0, 0);
+
+  box-shadow: none;
+}
+
+
+.rm-auth-submit:disabled {
+  opacity: 0.55;
+
+  cursor: wait;
+}
+
+
+/* =========================================================
+   LOGIN / REGISTER SWITCH
+   ========================================================= */
+
+.rm-auth-switch {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-top: 20px;
+
+  padding-top: 15px;
+
+  border-top: 1px solid #bdb8ac;
+
+  color: #777267;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 10px;
+}
+
+
+.rm-auth-switch button {
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #3155d9;
+
+  cursor: pointer;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+
+.rm-auth-switch button:hover {
+  color: #171918;
+
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   DESKTOP CORNER INFORMATION
+   ========================================================= */
+
+.rm-auth-panel::before {
+  content: "01 / AUTH";
+
+  position: fixed;
+
+  top: 69px;
+
+  left: 22px;
+
+  color: #8c877b;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  letter-spacing: 0.1em;
+}
+
+
+.rm-auth-panel::after {
+  content: "RETAILMAX";
+
+  position: fixed;
+
+  right: 22px;
+
+  bottom: 18px;
+
+  color: #8c877b;
+
+  font-family:
+    "DM Mono",
+    monospace;
+
+  font-size: 7px;
+
+  letter-spacing: 0.1em;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  .rm-auth {
+    padding: 60px 25px 45px;
+  }
+
+
+  .rm-auth-form-shell {
+    width: min(500px, 100%);
+  }
+
+
+  .rm-auth-panel::before {
+    top: 65px;
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 520px) {
+
+  .rm-auth {
+    padding: 60px 18px 45px;
+  }
+
+
+  .rm-auth-brand {
+    top: 15px;
+    left: 15px;
+
+    height: 34px;
+
+    font-size: 13px;
+  }
+
+
+  .rm-auth-mark {
+    width: 25px;
+    height: 25px;
+
+    font-size: 7px;
+  }
+
+
+  .rm-auth-form-shell {
+    padding: 32px 25px 28px;
+
+    box-shadow:
+      7px 7px 0 #3155d9;
+  }
+
+
+  .rm-auth-form-shell::before {
+    top: -27px;
+
+    height: 26px;
+
+    font-size: 6px;
+  }
+
+
+  .rm-auth-heading h2 {
+    font-size: 32px;
+  }
+
+
+  .rm-auth-index {
+    display: none;
+  }
+
+
+  .rm-auth-panel::before {
+    display: none;
+  }
+
+
+  .rm-auth-panel::after {
+    right: 15px;
+    bottom: 12px;
+  }
+
+
+  .rm-auth-switch {
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+}

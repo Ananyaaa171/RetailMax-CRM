@@ -5,6 +5,7 @@ import retailmax_backend.entity.Lead;
 import retailmax_backend.repository.CustomerRepository;
 import retailmax_backend.repository.LeadRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,14 @@ public class LeadService {
 
     // Create lead
     public Lead createLead(Lead lead) {
+        if (lead.getScore() == null) {
+            lead.setScore(0);
+        }
+
+        if (lead.getStatus() == null || lead.getStatus().isBlank()) {
+            lead.setStatus("NEW");
+        }
+
         return leadRepository.save(lead);
     }
 
@@ -60,13 +69,23 @@ public class LeadService {
         leadRepository.deleteById(id);
     }
 
-    // Calculate lead score and automatically determine status
+    // =========================================================
+    // CALCULATE LEAD SCORE
+    // =========================================================
+
+    @Transactional
     public Lead calculateLeadScore(Long id) {
 
         Lead lead = leadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lead not found"));
+                .orElseThrow(() -> new RuntimeException(
+                        "Lead not found with ID: " + id
+                ));
 
         int score = 0;
+
+        // -----------------------------------------------------
+        // CONTACT INFORMATION
+        // -----------------------------------------------------
 
         if (lead.getEmail() != null && !lead.getEmail().isBlank()) {
             score += 20;
@@ -76,9 +95,17 @@ public class LeadService {
             score += 20;
         }
 
-        if (lead.getSource() != null) {
+        // -----------------------------------------------------
+        // LEAD SOURCE
+        // -----------------------------------------------------
 
-            switch (lead.getSource().toLowerCase()) {
+        if (lead.getSource() != null && !lead.getSource().isBlank()) {
+
+            String source = lead.getSource()
+                    .trim()
+                    .toLowerCase();
+
+            switch (source) {
 
                 case "referral":
                     score += 30;
@@ -102,26 +129,67 @@ public class LeadService {
             }
         }
 
+        // -----------------------------------------------------
+        // BONUS FOR COMPLETE LEAD PROFILE
+        // -----------------------------------------------------
+
+        if (lead.getFirstName() != null &&
+                !lead.getFirstName().isBlank() &&
+                lead.getLastName() != null &&
+                !lead.getLastName().isBlank()) {
+
+            score += 10;
+        }
+
+        // Maximum possible score = 80
+        // Email 20
+        // Phone 20
+        // Referral 30
+        // Name 10
+
+        // -----------------------------------------------------
+        // LIMIT SCORE TO 100
+        // -----------------------------------------------------
+
+        score = Math.min(score, 100);
+
         lead.setScore(score);
 
-        if (score >= 80) {
+        // -----------------------------------------------------
+        // DETERMINE LEAD STATUS
+        // -----------------------------------------------------
+
+        if (score >= 70) {
+
             lead.setStatus("VERY_HOT");
-        } else if (score >= 60) {
+
+        } else if (score >= 55) {
+
             lead.setStatus("HOT");
+
         } else if (score >= 30) {
+
             lead.setStatus("QUALIFIED");
+
         } else {
+
             lead.setStatus("NEW");
         }
 
         return leadRepository.save(lead);
     }
 
-    // Convert lead into customer
+    // =========================================================
+    // CONVERT LEAD TO CUSTOMER
+    // =========================================================
+
+    @Transactional
     public Customer convertLeadToCustomer(Long id) {
 
         Lead lead = leadRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lead not found"));
+                .orElseThrow(() -> new RuntimeException(
+                        "Lead not found with ID: " + id
+                ));
 
         Customer customer = new Customer();
 
@@ -132,7 +200,7 @@ public class LeadService {
 
         Customer savedCustomer = customerRepository.save(customer);
 
-        // Mark the lead as converted
+        // Mark lead as converted
         lead.setStatus("CONVERTED");
         leadRepository.save(lead);
 
